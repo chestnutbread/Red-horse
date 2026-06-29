@@ -37,14 +37,3 @@ J * dω/dt = W_turb - W_comp - W_prop
 > 그래프 추가 예정
 
 ---
-
-## 고장 주입 계획
-
-| 항목 | 내용 |
-|------|------|
-| 주입 변수 | inertia (관성 모멘트) |
-| 주입 방식 | J_actual = J_nominal × faultFactor_shaft |
-| 예상 원인 | 베어링 마모, 프로펠러 손상 |
-| 예상 영향 | omega 변동, 가속/감속 과도 응답 시간 변화 |
-| 영향 신호 | omega ↑↓, thrust 변동 |
-| 상태 | 🔲 예정 |
