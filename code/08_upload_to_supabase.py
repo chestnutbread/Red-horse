@@ -7,13 +7,24 @@ Supabase Postgres 테이블(public.fuel_fault_samples)에 업로드.
    비활성화되어 있어서 6,000행을 채팅 컨텍스트로 옮겨 SQL을 만드는 방식은 비효율적이라
    로컬 Python이 직접 DB에 붓는 방식을 택했습니다.)
 
+⚠ 직접 연결(db.<ref>.supabase.co:5432)은 IPv6 전용이라 IPv6 미지원 네트워크에서는
+  "could not translate host name" 에러가 납니다. 이 경우 Connection Pooler(Supavisor)를
+  써야 하며, 이 스크립트는 기본값을 Pooler로 맞춰뒀습니다. 그래도 안 되면 아래 순서로
+  정확한 값을 대시보드에서 그대로 복사하세요:
+    Supabase 대시보드 → 프로젝트 Red-horse → 상단 "Connect" 버튼 → "Connection string"
+    탭에서 "Transaction pooler" 선택 → 거기 나오는 Host/Port/User를 아래 환경변수로 지정.
+
 사전 준비:
   1) pip install psycopg2-binary pandas --break-system-packages   (또는 그냥 pip install)
-  2) Supabase 대시보드 → Project Settings → Database → Connection string 에서
-     비밀번호 확인 (프로젝트 생성 시 설정한 DB 비밀번호. 분실 시 그 화면에서 재설정 가능)
-  3) 환경변수로 비밀번호 설정 (코드에 직접 쓰지 말 것):
-     Windows CMD:  set SUPABASE_DB_PASSWORD=여기에_비밀번호
-     PowerShell:   $env:SUPABASE_DB_PASSWORD="여기에_비밀번호"
+  2) Supabase 대시보드에서 DB 비밀번호 확인/재설정 (Project Settings → Database)
+  3) 환경변수 설정 (코드에 직접 쓰지 말 것):
+     Windows CMD:
+       set SUPABASE_DB_PASSWORD=여기에_비밀번호
+       (Pooler 기본 추정값이 안 맞으면 아래도 설정)
+       set SUPABASE_DB_HOST=대시보드에서_복사한_host
+       set SUPABASE_DB_PORT=6543
+       set SUPABASE_DB_USER=대시보드에서_복사한_user   (보통 postgres.프로젝트ref 형태)
+     PowerShell: $env:SUPABASE_DB_PASSWORD="여기에_비밀번호"  (나머지도 동일하게 $env: 로)
 
 실행:
   python 08_upload_to_supabase.py
@@ -38,20 +49,26 @@ FAULT_CSV  = DATA_DIR / "fuel_fault_data.csv"
 
 # ── Supabase 연결 정보 ──────────────────────────────────────────
 PROJECT_REF = "cbakdduteipgpycrtrmf"
-DB_HOST = f"db.{PROJECT_REF}.supabase.co"
-DB_PORT = 5432
-DB_NAME = "postgres"
-DB_USER = "postgres"
+PROJECT_REGION = "ap-northeast-2"  # Supabase 프로젝트 리전 (Seoul)
+
+# 기본값: Transaction Pooler (IPv4 지원, 대부분의 네트워크에서 direct보다 안정적으로 연결됨)
+# ⚠ "aws-0-ap-northeast-2" 부분은 추정값입니다 — 연결이 안 되면 대시보드 Connect 화면의
+#   Transaction pooler 탭에 나온 정확한 host를 SUPABASE_DB_HOST 환경변수로 넣어 덮어쓰세요.
+DB_HOST = os.environ.get("SUPABASE_DB_HOST", f"aws-0-{PROJECT_REGION}.pooler.supabase.com")
+DB_PORT = int(os.environ.get("SUPABASE_DB_PORT", "6543"))
+DB_NAME = os.environ.get("SUPABASE_DB_NAME", "postgres")
+DB_USER = os.environ.get("SUPABASE_DB_USER", f"postgres.{PROJECT_REF}")
 DB_PASSWORD = os.environ.get("SUPABASE_DB_PASSWORD")
 
 if not DB_PASSWORD:
     sys.exit(
         "❌ 환경변수 SUPABASE_DB_PASSWORD가 설정되어 있지 않습니다.\n"
         "   Supabase 대시보드 > Project Settings > Database에서 비밀번호를 확인한 뒤\n"
-        "   set SUPABASE_DB_PASSWORD=... (CMD) 또는 $env:SUPABASE_DB_PASSWORD=\"...\" (PowerShell) 실행 후 다시 시도하세요.\n"
-        "   ⚠ 직접 연결(5432)이 방화벽 등으로 막히면, 대시보드의 'Connection string' 화면에서\n"
-        "     Session pooler 주소(예: aws-0-...pooler.supabase.com, port 5432)로 DB_HOST를 바꿔보세요."
+        "   set SUPABASE_DB_PASSWORD=... (CMD) 또는 $env:SUPABASE_DB_PASSWORD=\"...\" (PowerShell) 실행 후 다시 시도하세요."
     )
+
+print(f"연결 시도: host={DB_HOST} port={DB_PORT} user={DB_USER}")
+print("  (연결 실패 시 대시보드 Connect > Transaction pooler 값으로 SUPABASE_DB_HOST/PORT/USER 재설정)")
 
 # CSV 컬럼명(snake+units, e.g. T1_K) → DB 컬럼명(snake_case, e.g. t1_k) 매핑
 COLUMN_MAP = {
