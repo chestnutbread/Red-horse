@@ -13,6 +13,8 @@ UAV 터보프롭 엔진 브레이턴 사이클 시뮬레이션 및 이상탐지 
 | `02_anomaly_detector.py` | PCA-AE 이상탐지 학습·평가·시각화. 시나리오1(Plan A)과 시나리오2(실제 Twin Builder 모델)는 물리 모델이 달라 **별도 PCA로 독립 평가** | `../03_이상탐지_결과/fig1~2.png` (+있으면 fig5.png) |
 | `05_twin_builder_comparison.py` | Python vs Twin Builder 잔차 비교 | `../03_이상탐지_결과/fig3~4.png, comparison_summary.csv` |
 | `06_vhdl_comparison.py` | Python vs VHDL Twin Builder 파라미터/결과 비교 | 콘솔 출력 |
+| `08_upload_to_supabase.py` | 시나리오2 CSV(정상+고장 6,000행)를 Supabase `public.fuel_fault_samples` 테이블에 업로드 | Supabase DB (project: Red-horse) |
+| `09_preprocess_fuel_fault.py` | 시나리오2 전처리 파이프라인(라벨 누수 컬럼 제거, TIT_error_K 피처 추가, 정상 train/holdout 분리, StandardScaler) | `PreprocessedData` (X_train_normal/X_holdout_normal/X_fault, scaler) |
 
 ## 고장 시나리오 2종 비교
 
