@@ -125,10 +125,22 @@ def main():
     print(f"✅ Supabase 업로드 완료: public.{TABLE_NAME} ({total_inserted:,}행)")
 
     # 검증: label/fault_stage별 개수 재조회
-    result = supabase.table(TABLE_NAME).select("label, fault_stage").execute()
-    df_check = pd.DataFrame(result.data)
-    print("\n검증(DB에 실제로 들어간 행수):")
-    print(df_check.groupby(['label', 'fault_stage'], dropna=False).size())
+    # ⚠ 이전 버전은 select()로 행을 직접 받아와서 groupby 했는데, PostgREST 기본
+    #   페이지 크기(1000행)에 잘려서 실제로는 6,000행 중 앞 1,000행(normal뿐)만
+    #   보고 있었음 — 업로드 자체는 정상인데 검증 로직이 잘못된 것이었음.
+    #   count="exact"로 서버 사이드 카운트를 받아오면 행을 다 내려받지 않아도 정확함.
+    def count_rows(**filters) -> int:
+        q = supabase.table(TABLE_NAME).select("id", count="exact")
+        for k, v in filters.items():
+            q = q.eq(k, v)
+        return q.execute().count
+
+    print("\n검증(DB에 실제로 들어간 행수, count=exact 기준):")
+    print(f"  전체            : {count_rows():,}")
+    print(f"  label=normal    : {count_rows(label='normal'):,}  (기대값 3,000)")
+    print(f"  label=fault     : {count_rows(label='fault'):,}  (기대값 3,000)")
+    print(f"    fault_stage=moderate : {count_rows(label='fault', fault_stage='moderate'):,}  (기대값 1,500)")
+    print(f"    fault_stage=severe   : {count_rows(label='fault', fault_stage='severe'):,}  (기대값 1,500)")
 
 
 if __name__ == "__main__":
