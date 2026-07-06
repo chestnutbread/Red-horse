@@ -9,6 +9,7 @@ UAV 터보프롭 엔진 브레이턴 사이클 시뮬레이션 및 이상탐지 
 | `turboprop_simulator_utils.py` | 브레이턴 사이클 공통 함수(Plan A), DEFAULTS/RANGES 정의 | — |
 | `real_engine_model_utils.py` | 실제 Twin Builder VHDL-AMS 엔진 공통 함수(inlet/compressor/combustor/turbine). 시나리오1(방안B)·시나리오2가 공유 (Issue #7, 2026-07-06 07에서 분리) | — |
 | `01_turboprop_simulator.py` | 정상 운전 데이터 3,000샘플 생성 | `../02_시뮬레이션_데이터/normal_data.csv` |
+| `03_preprocess_flameout.py` | 시나리오1 전처리 파이프라인(라벨/eta_b 누수 컬럼 제거, 정상 train/holdout 분리, StandardScaler) — 09_preprocess_fuel_fault.py의 시나리오1 대응판 (2026-07-08 신설, 번호 공백이던 03 사용) | `PreprocessedData` (X_train_normal/X_holdout_normal/X_fault, scaler) |
 | `04_jssg_fault_generator.py` | 실화(시나리오1) 고장 데이터 3,000샘플 생성 — Plan A(방안 A류, η_b 직접곱셈), 병행 보관용 | `../02_시뮬레이션_데이터/jssg_fault_data.csv` |
 | `07_fuel_fault_generator.py` | 연료계통 고장(시나리오2) 데이터 생성 — 실제 Twin Builder VHDL-AMS 컴포넌트 코드 이식 (GitHub Issue #6/#3). real_engine_model_utils.py 공통 모듈 사용 | `../02_시뮬레이션_데이터/combustor_real_normal_data.csv`(정상 3,000), `fuel_fault_data.csv`(고장 3,000) |
 | `10_combustion_efficiency_fault_generator.py` | 연소효율(η_b) 저하 실화(시나리오1) 데이터 생성 — **방안 B**(연료 주입량 사전보정) 적용, 실제 Twin Builder 모델로 재현 (GitHub Issue #7, 2026-07-06) | `../02_시뮬레이션_데이터/etab_flameout_fault_data.csv`(고장 3,000) |
