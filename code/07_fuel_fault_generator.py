@@ -74,11 +74,20 @@ faultFactor_fuel 3케이스 (Issue #3 실측 검증):
     → 이 정상 데이터는 Plan A의 normal_data.csv와 물리 모델이 다르므로
       (PR=10.55 vs pi_c=9.6, comb_ref 명령구조 vs η_b 직접곱셈 등) 반드시
       이 파일끼리만 짝지어 PCA 베이스라인으로 써야 한다 (02_anomaly_detector.py 참조).
+
+[2026-07-06, Issue #7 반영] 엔진 코어 함수(inlet/compressor/combustor/turbine)를
+real_engine_model_utils.py 공통 모듈로 분리했다. 시나리오1(연소효율 저하 실화,
+10_combustion_efficiency_fault_generator.py)이 방안 B로 동일한 엔진 모델을
+공유해야 하기 때문이다(Issue #7 "모델링 수정 방향" 3번). 이 파일의 물리식과
+파라미터 값은 전혀 바뀌지 않았고, 함수 정의 위치만 이동했다.
 """
 
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from real_engine_model_utils import (
+    inlet, compressor, combustor, turbine, COMB_REF0,
+)
 
 N_PER_STAGE = 1500
 SEED        = 331
@@ -88,24 +97,6 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 FAULT_PATH   = OUTPUT_DIR / "fuel_fault_data.csv"
 NORMAL_PATH  = OUTPUT_DIR / "combustor_real_normal_data.csv"
 
-# ── 실제 컴포넌트 파라미터 (Issue #6 + Issue #3 + 06_vhdl_comparison.py 교차검증) ──
-T_AMB0   = 288.15      # K
-P_AMB0   = 101325.0    # Pa
-GAMMA_A  = 1.4
-GAMMA_G  = 1.31
-R_GAS    = 287.04      # J/(kg*K)
-CP_AIR   = GAMMA_A * R_GAS / (GAMMA_A - 1.0)   # ≈1004.64 J/(kg*K)
-CP_GAS   = GAMMA_G * R_GAS / (GAMMA_G - 1.0)   # ≈1212.66 J/(kg*K)
-FUEL_CAL = 43_000_000.0  # J/kg
-
-PR        = 10.55   # ⚠ Issue#6 entity 기본값(8.0) 아님, 실제 스키매틱 값 (본문 각주 참조)
-ETA_COMP  = 0.85
-EFF_COMB  = 0.96     # ⚠ entity 기본값(0.95) 아님
-COMB_REF0 = 1365.0   # K, Issue #3 검증 런 기준
-ETA_T     = 0.87     # ⚠ entity 기본값(0.88) 아님
-ETA_M     = 0.98
-MFLOW     = 3.493    # kg/s
-
 NOISE_LEVEL = 0.003   # 센서노이즈(가우시안), 기존 프로젝트 관례(0.5%)보다 약간 낮게
                       # → 팀원 실험처럼 "순수 연료고장 효과 분리"를 위해 altitude/mach는 고정하고
                       #   comb_ref만 소폭(±15K, 스로틀 미세조정 대응) 흔든다.
@@ -114,38 +105,6 @@ STAGES = [
     ('moderate', 0.7, 'Case2'),
     ('severe',   0.5, 'Case3'),
 ]
-
-
-def inlet(altitude=0.0, mach=0.0):
-    a1, a2 = 0.0065, 5.2561
-    t_amb = T_AMB0 - a1 * altitude
-    p_amb = P_AMB0 * ((t_amb / T_AMB0) ** a2)
-    t_out = t_amb * (1.0 + (GAMMA_A - 1.0) / 2.0 * mach ** 2)
-    p_out = p_amb * ((1.0 + (GAMMA_A - 1.0) / 2.0 * mach ** 2) ** (GAMMA_A / (GAMMA_A - 1.0)))
-    return t_out, p_out
-
-
-def compressor(t_in, p_in):
-    t_out = t_in * (1.0 + (1.0 / ETA_COMP) * (PR ** ((GAMMA_A - 1.0) / GAMMA_A) - 1.0))
-    p_out = PR * p_in
-    power = MFLOW * CP_AIR * (t_out - t_in)   # W
-    return t_out, p_out, power
-
-
-def combustor(t_in, p_in, comb_ref, fault_factor):
-    """Issue #6 combustor 아키텍처 그대로: demand FAR 역산 → actual FAR = demand*faultFactor_fuel."""
-    far_demand = ((comb_ref / t_in) - 1.0) / (FUEL_CAL / (CP_GAS * t_in) - comb_ref / t_in)
-    far_actual = far_demand * fault_factor
-    t_out = t_in * (1.0 + far_actual * FUEL_CAL / (CP_GAS * t_in)) / (1.0 + far_actual)
-    p_out = EFF_COMB * p_in
-    return t_out, p_out, far_demand, far_actual
-
-
-def turbine(t_in, p_in, temp_diff_comp, far_comb):
-    t_out = t_in + temp_diff_comp * ETA_M * (1.0 + far_comb)
-    p_out = p_in * ((1.0 - (1.0 - t_out / t_in) / ETA_T) ** (GAMMA_G / (GAMMA_G - 1.0)))
-    power = abs(MFLOW) * CP_GAS * (t_in - t_out)   # W
-    return t_out, p_out, power
 
 
 def run_case(fault_factor, rng):
@@ -174,34 +133,35 @@ def run_case(fault_factor, rng):
     return out
 
 
-# ── 정상 데이터 (faultFactor_fuel=1.0) ──────────────────────────────
-rng = np.random.default_rng(SEED)
-normal_records = []
-for i in range(3000):
-    rec = run_case(1.0, rng)
-    rec.update(sample_id=i, label='normal', fault_type='none')
-    normal_records.append(rec)
+if __name__ == "__main__":
+    # ── 정상 데이터 (faultFactor_fuel=1.0) ──────────────────────────────
+    rng = np.random.default_rng(SEED)
+    normal_records = []
+    for i in range(3000):
+        rec = run_case(1.0, rng)
+        rec.update(sample_id=i, label='normal', fault_type='none')
+        normal_records.append(rec)
 
-df_normal = pd.DataFrame(normal_records)
-df_normal.to_csv(NORMAL_PATH, index=False)
-print(f"✅ 연료계통 실제모델 정상 데이터 {len(df_normal):,}샘플 → {NORMAL_PATH}")
-print(f"   (faultFactor_fuel=1.0 → TIT_error 평균 {df_normal['TIT_error_K'].mean():.4f} K, 이론상 0)")
+    df_normal = pd.DataFrame(normal_records)
+    df_normal.to_csv(NORMAL_PATH, index=False)
+    print(f"✅ 연료계통 실제모델 정상 데이터 {len(df_normal):,}샘플 → {NORMAL_PATH}")
+    print(f"   (faultFactor_fuel=1.0 → TIT_error 평균 {df_normal['TIT_error_K'].mean():.4f} K, 이론상 0)")
 
-# ── 고장 데이터 (moderate=0.7 / severe=0.5) ─────────────────────────
-rng = np.random.default_rng(SEED + 1)
-fault_records = []; sample_id = 0
-for stage_name, factor, tb_case in STAGES:
-    for _ in range(N_PER_STAGE):
-        rec = run_case(factor, rng)
-        rec.update(sample_id=sample_id, label='fault', fault_type='FS-FUELSTARV',
-                   fault_stage=stage_name, twin_builder_case=tb_case,
-                   source_issue='github.com/chestnutbread/Red-horse/issues/3,6')
-        fault_records.append(rec)
-        sample_id += 1
+    # ── 고장 데이터 (moderate=0.7 / severe=0.5) ─────────────────────────
+    rng = np.random.default_rng(SEED + 1)
+    fault_records = []; sample_id = 0
+    for stage_name, factor, tb_case in STAGES:
+        for _ in range(N_PER_STAGE):
+            rec = run_case(factor, rng)
+            rec.update(sample_id=sample_id, label='fault', fault_type='FS-FUELSTARV',
+                       fault_stage=stage_name, twin_builder_case=tb_case,
+                       source_issue='github.com/chestnutbread/Red-horse/issues/3,6')
+            fault_records.append(rec)
+            sample_id += 1
 
-df_fault = pd.DataFrame(fault_records)
-df_fault.to_csv(FAULT_PATH, index=False)
-print(f"\n✅ 연료계통 고장 데이터 {len(df_fault):,}샘플 → {FAULT_PATH}")
-print(df_fault.groupby('fault_stage')[['faultFactor_fuel', 'T3_K', 'TIT_error_K', 'turbine_power_kW']].mean().round(2))
-print("\n참고: Issue #3 실측(700s 기준) comb_t_out ≈ 1130K(Case2) / 965K(Case3).")
-print("      본 지상설계점 계산값과는 팀원 실험의 비행프로파일 시점 차이만큼 수% 편차가 날 수 있음.")
+    df_fault = pd.DataFrame(fault_records)
+    df_fault.to_csv(FAULT_PATH, index=False)
+    print(f"\n✅ 연료계통 고장 데이터 {len(df_fault):,}샘플 → {FAULT_PATH}")
+    print(df_fault.groupby('fault_stage')[['faultFactor_fuel', 'T3_K', 'TIT_error_K', 'turbine_power_kW']].mean().round(2))
+    print("\n참고: Issue #3 실측(700s 기준) comb_t_out ≈ 1130K(Case2) / 965K(Case3).")
+    print("      본 지상설계점 계산값과는 팀원 실험의 비행프로파일 시점 차이만큼 수% 편차가 날 수 있음.")
