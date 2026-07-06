@@ -3,6 +3,10 @@
 combustor_real_normal_data.csv / fuel_fault_data.csv를
 Supabase 테이블(public.fuel_fault_samples)에 업로드.
 
+[2026-07-08] 팀원 모델링 데이터 7,000건 기준 통일에 맞춰 07_fuel_fault_generator.py의
+샘플 수를 6,000(normal 3,000/moderate 1,500/severe 1,500) → 7,000(normal 3,500/
+moderate 1,750/severe 1,750)로 조정 — 아래 검증 기대값도 함께 갱신.
+
 [2026-07-04 재작성 — psycopg2 직접연결 → supabase-py REST 방식으로 전환]
 직접 Postgres 연결(db.<ref>.supabase.co:5432, IPv6 전용)도, Transaction Pooler
 (aws-0-<region>.pooler.supabase.com:6543)도 네트워크/tenant 설정 문제로 계속
@@ -48,7 +52,7 @@ if not SUPABASE_SERVICE_KEY:
     sys.exit(
         "❌ 환경변수 SUPABASE_SERVICE_ROLE_KEY가 설정되어 있지 않습니다.\n"
         "   대시보드 > Project Settings > API > service_role 키를 복사한 뒤\n"
-        "   set SUPABASE_SERVICE_ROLE_KEY=... (CMD) 또는 $env:SUPABASE_SERVICE_ROLE_KEY=\"...\" (PowerShell)\n"
+        "   set SUPABASE_SERVICE_ROLE_KEY=... (CMD) 또는 $env:SUPABASE_SERVICE_ROLE_KEY="..." (PowerShell)\n"
         "   실행 후 다시 시도하세요."
     )
 
@@ -137,10 +141,10 @@ def main():
 
     print("\n검증(DB에 실제로 들어간 행수, count=exact 기준):")
     print(f"  전체            : {count_rows():,}")
-    print(f"  label=normal    : {count_rows(label='normal'):,}  (기대값 3,000)")
-    print(f"  label=fault     : {count_rows(label='fault'):,}  (기대값 3,000)")
-    print(f"    fault_stage=moderate : {count_rows(label='fault', fault_stage='moderate'):,}  (기대값 1,500)")
-    print(f"    fault_stage=severe   : {count_rows(label='fault', fault_stage='severe'):,}  (기대값 1,500)")
+    print(f"  label=normal    : {count_rows(label='normal'):,}  (기대값 3,500)")
+    print(f"  label=fault(FS-FUELSTARV): {count_rows(label='fault', fault_type='FS-FUELSTARV'):,}  (기대값 3,500)")
+    print(f"    fault_stage=moderate : {count_rows(label='fault', fault_stage='moderate'):,}  (기대값 1,750)")
+    print(f"    fault_stage=severe   : {count_rows(label='fault', fault_stage='severe'):,}  (기대값 1,750)")
 
 
 if __name__ == "__main__":
