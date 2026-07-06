@@ -1,8 +1,12 @@
 """
 14_upload_etab_to_fuel_fault_samples.py
-10_combustion_efficiency_fault_generator.py(시나리오1, 방안B, 실제모델) 결과인
-etab_flameout_fault_data.csv를 Supabase public.fuel_fault_samples 테이블의
+10_combustion_efficiency_fault_generator.py(시나리오1, 독립 eta_b 포트, Issue #9)
+결과인 etab_flameout_fault_data.csv를 Supabase public.fuel_fault_samples 테이블의
 eta_b 컬럼에 업로드한다.
+
+[2026-07-08] 07번 데이터가 6,000→7,000건(normal 3,500/moderate 1,750/severe 1,750)으로
+조정되어 아래 검증 기대값(FS-FUELSTARV 합계)도 3,000→3,500으로 갱신함. 10번(시나리오1,
+onset/partial/full 각 1,000샘플=3,000)은 이번 조정 대상이 아니므로 그대로 유지.
 
 왜 flameout_fault_samples가 아니라 fuel_fault_samples에 올리는가:
   flameout_fault_samples(11번이 업로드)는 04(Plan A) 데이터 전용 테이블이다.
@@ -52,7 +56,7 @@ if not SUPABASE_SERVICE_KEY:
     sys.exit(
         "❌ 환경변수 SUPABASE_SERVICE_ROLE_KEY가 설정되어 있지 않습니다.\n"
         "   대시보드 > Project Settings > API > service_role 키를 복사한 뒤\n"
-        "   set SUPABASE_SERVICE_ROLE_KEY=... (CMD) 또는 $env:SUPABASE_SERVICE_ROLE_KEY=\"...\" (PowerShell)\n"
+        "   set SUPABASE_SERVICE_ROLE_KEY=... (CMD) 또는 $env:SUPABASE_SERVICE_ROLE_KEY="..." (PowerShell)\n"
         "   실행 후 다시 시도하세요."
     )
 
@@ -130,7 +134,7 @@ def main():
         )
 
     df_fault = load_and_prepare(FAULT_CSV)
-    print(f"업로드 대상: 시나리오1(방안B, eta_b) 고장 {len(df_fault):,}행")
+    print(f"업로드 대상: 시나리오1(독립 eta_b 포트, Issue #9) 고장 {len(df_fault):,}행")
     print("정상 데이터는 07/08이 이미 올린 공통 베이스라인과 동일하므로 다시 올리지 않습니다.")
 
     supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
@@ -157,7 +161,7 @@ def main():
     print(f"    fault_stage=onset         : {count_rows(fault_type='FF-FLAMEOUT', fault_stage='onset'):,}  (기대값 1,000)")
     print(f"    fault_stage=partial       : {count_rows(fault_type='FF-FLAMEOUT', fault_stage='partial'):,}  (기대값 1,000)")
     print(f"    fault_stage=full          : {count_rows(fault_type='FF-FLAMEOUT', fault_stage='full'):,}  (기대값 1,000)")
-    print(f"  fault_type=FS-FUELSTARV(기존, 변동 없어야 함) : {count_rows(fault_type='FS-FUELSTARV'):,}  (기대값 3,000)")
+    print(f"  fault_type=FS-FUELSTARV(기존, 변동 없어야 함) : {count_rows(fault_type='FS-FUELSTARV'):,}  (기대값 3,500)")
 
     print("\n이제 12_export_pca_artifacts.py를 다시 실행하면 시나리오1 PCA가 이 데이터로 학습됩니다.")
 
