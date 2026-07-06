@@ -18,6 +18,7 @@ UAV 터보프롭 엔진 브레이턴 사이클 시뮬레이션 및 이상탐지 
 | `06_vhdl_comparison.py` | Python vs VHDL Twin Builder 파라미터/결과 비교. Issue #6 검토 결과(eff↔η_b 명칭 혼동, η_b 미존재) + Issue #7 방안 B 검증(시나리오 D) 반영 | 콘솔 출력 |
 | `08_upload_to_supabase.py` | 시나리오2 CSV(정상+고장 6,000행)를 Supabase `public.fuel_fault_samples` 테이블에 업로드 | Supabase DB (project: Red-horse) |
 | `09_preprocess_fuel_fault.py` | 시나리오2 전처리 파이프라인(라벨 누수 컬럼 제거, TIT_error_K 피처 추가, 정상 train/holdout 분리, StandardScaler) | `PreprocessedData` (X_train_normal/X_holdout_normal/X_fault, scaler) |
+| `11_upload_flameout_to_supabase.py` | 시나리오1 CSV(정상+고장 6,000행)를 Supabase `public.flameout_fault_samples` 테이블에 업로드 (08의 시나리오1 대응판, 2026-07-08 신설) | Supabase DB (project: Red-horse) |
 
 ## 고장 시나리오 2종 비교
 
