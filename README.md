@@ -1,6 +1,6 @@
 # UAV 터보프롭 엔진 이상탐지 프로젝트
 
-> Ansys Simulation Challenge 참가작 | 팀원 2명 | 7일 개발
+> Ansys Simulation Challenge 참가작 | 팀원 2명 
 
 ## 폴더 구조
 
