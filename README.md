@@ -161,7 +161,7 @@ UAV 터보프롭 엔진 실시간 상태 진단을 위한 Twin Builder + AI 융�
 
               [항목7] turbine1이 gearbox1/propeller1 부하와 열역학적으로 분리됨 — 축 결합 스키매틱 확인 필요(Issue #23).
 
-              [항목8] K_τ(프로펠러 부하토크계수) = 0.16 — chestnutbread가 정격 축출력 재현을 목표로 자체 역산한 값(재현율 99.98%)이며, junslee02의 Twin Builder 실측 대조는 아직 없음.
+              [항목8] K_τ(프로펠러 부하토크계수) = 0.0512 — Issue #31 VHDL-AMS propeller1 인스턴스 확인값(GR=26.229, eta_gear=0.98과 함께 확인). 기존 0.16은 chestnutbread가 정격 축출력 재현 목표로 자체 역산했던 미검증 문서상 메모였으며, 실제 코드 기본값과 대조한 결과 정정함(재검증: propeller_gearbox_model.py, N_prop 계산값 1590.99 RPM vs Table1 1,591 RPM, 오차 0.013 RPM). junslee02의 Twin Builder 실측 대조는 아직 없음.
 
               [항목9] Supabase RLS 비활성 8개 테이블 — 보안 권고 사항, 팀 논의 후 정책 적용 필요(위 1-2 참조).
 
