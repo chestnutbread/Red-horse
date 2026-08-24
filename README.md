@@ -10,6 +10,29 @@ Ansys Simulation Challenge 참가작 | 팀원 2명 (chestnutbread, junslee02)
 └── docs
 ```
 
+## 0. 컴포넌트 구성 (13개, 2026-08-24 문서화 완료)
+
+원본 모델은 Issue #31(2026-07-29, junslee02)에 공개된 13개 VHDL-AMS 컴포넌트로 구성되어 있으며, 이번 세션에서 각 컴포넌트별 상세 문서를 components/ 하위 폴더에 정리했습니다. 기존 저장소 문서화는 5개만 반영되어 있었고, 이번 작업으로 나머지 8개를 보강했습니다(신규 개발이 아니라 이미 논문 시뮬레이션에 쓰인 기존 모델의 문서 동기화).
+
+| # | 컴포넌트 | 역할 | 문서 |
+|---|---|---|---|
+| 1 | Inlet | 흡입구, 대기조건 계산 | [components/01_Inlet](components/01_Inlet/README_Inlet.md) |
+| 2 | Compressor | 압축기 | [components/02_Compressor](components/02_Compressor) |
+| 3 | Combustor | 연소기 | [components/03_Combustor](components/03_Combustor) |
+| 4 | Turbine | 터빈 | [components/04_Turbine](components/04_Turbine) |
+| 5 | Shaft | 가스제너레이터 축 | [components/05_Shaft](components/05_Shaft) |
+| 6 | Gearbox | 감속 기어박스 | [components/06_Gearbox](components/06_Gearbox/README_Gearbox.md) |
+| 7 | Propeller | 프로펠러 부하 모델 | [components/07_Propeller](components/07_Propeller/README_Propeller.md) |
+| 8 | Nozzle | 배기 노즐 및 추력 계산 | [components/08_Nozzle](components/08_Nozzle/README_Nozzle.md) |
+| 9 | FuelTank | 연료 공급 계통 | [components/09_FuelTank](components/09_FuelTank/README_FuelTank.md) |
+| 10 | AtmProps | 고도·마하수에 따른 대기 상태량 | [components/10_AtmProps](components/10_AtmProps/README_AtmProps.md) |
+| 11 | NgGovernor | 가스제너레이터 회전수 제어 | [components/11_NgGovernor](components/11_NgGovernor/README_NgGovernor.md) |
+| 12 | TITLimiter | 터빈입구온도(TIT) 제한 | [components/12_TITLimiter](components/12_TITLimiter/README_TITLimiter.md) |
+| 13 | MinSelect | Ng governor/TIT limiter 최소값 선택 + anti-windup | [components/13_MinSelect](components/13_MinSelect/README_MinSelect.md) |
+
+신규 추가한 8개(6~13번) 문서에는 모델 개요, 핵심 파라미터, 지배방정식, 근거(가능한 경우 Issue 번호 및 검증 데이터)를 포함했습니다. 다만 이번 문서화 시점에는 6~13번 컴포넌트의 Twin Builder 실제 시뮬레이션 캡처 이미지가 없어 텍스트 근거로만 작성했으며, 이미지 추가는 팀 확인 후 진행이 필요합니다.
+
+
 ## 이 문서에 대하여 (2026-07-24 갱신)
 
 이 README는 GitHub 이슈 원문(#1~#26), Supabase(cbakdduteipgpycrtrmf) 실측 테이블, 로컬 Python 코드(real_engine_model_utils.py, 02_fault_scenario_verification.py, 03_python_theory_dataset_generator.py) 세 가지 1차 자료만 근거로 독립적으로 재작성했습니다. 이전 세션들이 남긴 "확정" 서술을 그대로 이어받지 않고, junslee02가 이슈에서 실제로 무엇을 확인/미확인했는지 원문 인용 기준으로 재판정했습니다. "확정"이라는 표현은 junslee02 본인이 이슈에서 명시적으로 확인한 경우에만 사용하고, 그 외에는 "~로 판단됨(근거: …)" 또는 "미해결"로 표기합니다.
@@ -197,3 +220,28 @@ Paper(FullPaper_APISAT2026_se-eunpark_V1)가 Table 4에서 인용하는 4개 테
 4개 테이블 모두 논문 Table 4와 행수가 정확히 일치하고, T4가 정확히 1373.00K까지 상승 후 평탄화됩니다. 4장 항목1이 지적한 1250K 정체는 접미사 없는 구버전 테이블(ENGINE_STABLE 등)에서 나타난 현상이고, 논문이 실제로 사용하는 _1373K 접미사 테이블은 행수와 T4 값 모두 진짜 1373K 거버닝 데이터로 확인됩니다. 따라서 4장 항목1은 이 4개 테이블 범위 안에서는 해소된 것으로 판단됩니다.
 
 단, 구버전 테이블이 왜 아직 1250K로 남아있는지, 언제 실제 1373K 재시뮬레이션이 이뤄졌는지는 팀 확인이 필요합니다. 또한 이전 조회에서 ENGINE_ALL_1373K 행수가 402,031로 보고된 것은 list_tables의 추정치(reltuples)가 오래되어 발생한 오차였고, 직접 COUNT(*)로는 403,418로 논문과 정확히 일치함을 확인했습니다.
+
+
+## 6-1. 2026-08-24 추가 근거 -- min_select1 구조로 본 TIT 설계점 override 메커니즘
+
+Issue #31(2026-07-29) 공개 소스코드를 이번 세션이 직접 재확인한 결과, 4장 [항목1]의 미해결 불일치에 대한 구조적 설명을 추가합니다(components/12_TITLimiter, components/13_MinSelect 문서와 교차 참조).
+
+- combustor1.comb_ref는 상수가 아니라 min_select1이 매 시점 계산하는 값입니다: min_select1은 ng_governor1(회전수 제어)과 tit_limiter1(온도 제한)의 출력 중 더 낮은 값을 combustor1.comb_ref로 전달합니다.
+- tit_limiter1의 entity generic 기본값은 setpoint=1250.0K입니다(Issue #31 원문 코드 재확인 완료).
+- 이 구조로 볼 때, 6장에서 확인한 _1373K 접미사 테이블(T4 max=1372.99...K, 논문 Table 4와 행수 일치)은 스키매틱 인스턴스에서 tit_limiter1의 setpoint를 1373으로 override하여 실행한 결과로 판단하는 것이 구조적으로 타당합니다.
+- 이 1373K는 임의값이 아니라 매뉴얼상 TIT(T4) 한계 1100 degC = 1373.15K(TSG134 섹션1)에 해당하는 값이며, 설계점 comb_ref=1365K는 이 한계 대비 8.15K 여유를 둔 값입니다(근거: TPE33110_Research_Parameters_v3.xlsx 시트5).
+- 여전히 팀 확인이 필요한 부분: 위 override 설명은 min_select1의 회로 구조상 합리적인 추론이지만, 실제 스키매틱 파일에서 setpoint override 배선이 존재하는지를 이번 세션에서 직접 눈으로 확인하지는 못했습니다. 구버전(접미사 없는) 테이블이 왜 아직도 1250K로 남아 있는지, 언제 재시뮬레이션이 이뤄졌는지도 여전히 미해결입니다.
+
+
+## 7. 이슈 해결 현황 (2026-08-24 재검토, 헷갈림 방지용)
+
+이번 세션이 GitHub 이슈를 코드/데이터와 직접 대조해 정리한 해결 상태입니다. 향후 세션은 아래 표를 먼저 참고해 중복 확인을 피하시기 바랍니다.
+
+| 이슈 | 제목 | 상태(2026-08-24 기준) | 근거 |
+|---|---|---|---|
+| #32 | Compressor1 πc 파라미터 수정(9.6→10.55) 및 MQ-9 4개 시나리오 재실행 | 해결됨 (이슈 자체는 open 상태였으나 코멘트에 검증 완료 기록 있어 이번 세션이 close 처리) | junslee02 코멘트: 4개 시나리오 재실행 후 T3가 πc=10.55 기준 예상값과 1~2K 이내로 일치 확인, 업로드 승인 완료 |
+| #31 | 컴포넌트 코드 공유 | 문서화 완료 (0장 참조) - 13개 컴포넌트 문서 동기화 PR로 반영 | 이번 세션 |
+| #33 | ηcomb 실제값(0.99) vs 논문 가정값(0.96) 불일치 | 이슈 자체가 closed 상태(원 저장소 확인) | GitHub 이슈 메타데이터 |
+| 4장 [항목1] TIT 1250K vs 1373K | - | 부분 해소 - _1373K 테이블 자체는 6장에서 해소 확인, override 구조적 근거는 6-1장에서 보강. 단 구버전 테이블이 왜 1250K로 남았는지는 미해결 | 6장, 6-1장 |
+| 4장 [항목5] Nozzle 초킹 버그 | - | 미해결, 수정 필요 (별도 이슈로 등록 예정) | components/08_Nozzle 문서, 이번 세션 코드 재확인 |
+| 4장 [항목8] K_τ=0.0512 | - | 해결됨 (0.16은 미검증 메모였음이 확정, 0.0512가 최종값) | components/07_Propeller 문서 |
