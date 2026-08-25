@@ -197,3 +197,34 @@ Paper(FullPaper_APISAT2026_se-eunpark_V1)가 Table 4에서 인용하는 4개 테
 4개 테이블 모두 논문 Table 4와 행수가 정확히 일치하고, T4가 정확히 1373.00K까지 상승 후 평탄화됩니다. 4장 항목1이 지적한 1250K 정체는 접미사 없는 구버전 테이블(ENGINE_STABLE 등)에서 나타난 현상이고, 논문이 실제로 사용하는 _1373K 접미사 테이블은 행수와 T4 값 모두 진짜 1373K 거버닝 데이터로 확인됩니다. 따라서 4장 항목1은 이 4개 테이블 범위 안에서는 해소된 것으로 판단됩니다.
 
 단, 구버전 테이블이 왜 아직 1250K로 남아있는지, 언제 실제 1373K 재시뮬레이션이 이뤄졌는지는 팀 확인이 필요합니다. 또한 이전 조회에서 ENGINE_ALL_1373K 행수가 402,031로 보고된 것은 list_tables의 추정치(reltuples)가 오래되어 발생한 오차였고, 직접 COUNT(*)로는 403,418로 논문과 정확히 일치함을 확인했습니다.
+
+## 7. 이슈 해결 현황 (2026-08-25 세션 기준)
+
+이번 세션 및 이전 세션에서 close 처리한 이슈와, 정정/보류된 이슈를 정리합니다. 근거는 각 이슈 원문(GitHub)입니다.
+
+### 7-1. Close 완료
+
+| 이슈 | 제목 | close 근거 | 링크 |
+|---|---|---|---|
+| #3 | (이전 세션 완료) | 이전 세션에서 [해결] 접두 + 코멘트 + close 완료 | https://github.com/chestnutbread/Red-horse/issues/3 |
+| #4 | (이전 세션 완료) | 이전 세션에서 [해결] 접두 + 코멘트 + close 완료 | https://github.com/chestnutbread/Red-horse/issues/4 |
+| #5 | (이전 세션 완료) | 이전 세션에서 [해결] 접두 + 코멘트 + close 완료 | https://github.com/chestnutbread/Red-horse/issues/5 |
+| #7 | (이전 세션 완료) | 이전 세션에서 [해결] 접두 + 코멘트 + close 완료 | https://github.com/chestnutbread/Red-horse/issues/7 |
+| #8 | (이전 세션 완료) | 이전 세션에서 [해결] 접두 + 코멘트 + close 완료 | https://github.com/chestnutbread/Red-horse/issues/8 |
+| #12 | (이전 세션 완료) | 이전 세션에서 [해결] 접두 + 코멘트 + close 완료 | https://github.com/chestnutbread/Red-horse/issues/12 |
+| #13 | (이전 세션 완료) | 이전 세션에서 [해결] 접두 + 코멘트 + close 완료 | https://github.com/chestnutbread/Red-horse/issues/13 |
+| #15 | (이전 세션 완료) | 이전 세션에서 [해결] 접두 + 코멘트 + close 완료 | https://github.com/chestnutbread/Red-horse/issues/15 |
+| #16 | (이전 세션 완료) | 이전 세션에서 [해결] 접두 + 코멘트 + close 완료 | https://github.com/chestnutbread/Red-horse/issues/16 |
+| #30 | 10_combustion_efficiency_fault_generator.py 중복 코드 버그 | 2026-07-29 세션에 이미 close 완료(코드 수정 + fuel_fault_samples 테이블 생성/스모크테스트 확인). 이번 세션은 제목에 [해결] 접두만 추가 | https://github.com/chestnutbread/Red-horse/issues/30 |
+| #34 | FARgap 노이즈 강건성 몬테카를로 검증(σ=0.3%, N=500) | 이번 세션(2026-08-25) close. S1은 노이즈 무관 FARgap≡0(ffuel≡1 항등식), S2는 정상상태 플래토에서 5-95백분위수가 0 위로 강건함을 확인. 결함 개시 직후(t=300s) 구간의 38% 오분류 위험은 논문 Sec.6 한계점에 이미 반영됨 | https://github.com/chestnutbread/Red-horse/issues/34 |
+
+### 7-2. Open 유지 (근거 있음, close 보류)
+
+| 이슈 | 제목 | open 유지 사유 | 링크 |
+|---|---|---|---|
+| #28 | Supabase SSOT 기준 파라미터 감사 및 README 갱신 | 2026-08-25 코멘트(작성자 본인)에서 "원고 Table1/3 전체 항목 1:1 재대조 미완료"를 사유로 open 유지를 명시함. 이번 세션은 그 판단을 재확인하는 코멘트만 추가, close하지 않음 | https://github.com/chestnutbread/Red-horse/issues/28 |
+| #2 | README 수식 오류·논리 모순·근거 부족 항목 정리 | 11개 항목 중 ①⑤⑦⑨는 해소, ⑩(γ=1.31 온도기준)은 README §2에 미해결로 명시, ②③④⑥⑧⑪(터빈 T4<923K 모순, 노즐면적 논리모순, 터빈동력 FAR반영, FAR=0.019 근거, inertia 단위, port in quantity 근거)은 코드/README 상 해소 여부 미확인. 추가로 이번 세션에서 이슈 내 "PR=9.6 권고" 코멘트를 π_c=10.55(#32 확정)로 정정하는 코멘트를 추가함(close는 하지 않음) | https://github.com/chestnutbread/Red-horse/issues/2 |
+
+### 7-3. 참고 — π_c 값 정정 이력
+
+#2 이슈 코멘트 중 "[파라미터 수정] TPE331-10_Research_Parameters_v2 기준 비교 결과"에서 PR을 9.6(Garrett TPE331-10; Saravanamuttoo 2017 부록A 인용)으로 권고한 바 있으나, Issue #32(2026-07-30)에서 π_c = 10.55(Honeywell 명판값, FAA TCDS E4WE, Honeywell 공식 브로셔 N61-1491-000-000, VHDL 스키매틱 인스턴스 확인)로 최종 확정되었습니다. 9.6은 VHDL entity generic 기본값(placeholder)이었던 것으로 판명되었습니다. 근거: https://github.com/chestnutbread/Red-horse/issues/32 , https://github.com/chestnutbread/Red-horse/issues/2
