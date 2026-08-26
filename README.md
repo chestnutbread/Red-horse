@@ -228,3 +228,30 @@ Paper(FullPaper_APISAT2026_se-eunpark_V1)가 Table 4에서 인용하는 4개 테
 ### 7-3. 참고 — π_c 값 정정 이력
 
 #2 이슈 코멘트 중 "[파라미터 수정] TPE331-10_Research_Parameters_v2 기준 비교 결과"에서 PR을 9.6(Garrett TPE331-10; Saravanamuttoo 2017 부록A 인용)으로 권고한 바 있으나, Issue #32(2026-07-30)에서 π_c = 10.55(Honeywell 명판값, FAA TCDS E4WE, Honeywell 공식 브로셔 N61-1491-000-000, VHDL 스키매틱 인스턴스 확인)로 최종 확정되었습니다. 9.6은 VHDL entity generic 기본값(placeholder)이었던 것으로 판명되었습니다. 근거: https://github.com/chestnutbread/Red-horse/issues/32 , https://github.com/chestnutbread/Red-horse/issues/2
+
+### 7-4. Close 완료 (2026-08-25, 별도 세션 추가분)
+
+| 이슈 | 제목 | close 근거 | 링크 |
+|---|---|---|---|
+| #1 | TPE331-10 브레이턴 사이클 Python 교차검증 (normal.py) | π_c=10.55(Honeywell 브로셔 근거)가 README §2에 반영됨을 재확인 | https://github.com/chestnutbread/Red-horse/issues/1 |
+| #17 | 프로펠러/감속기어 단순근사 모델링 및 MQ-9 비행조건 재실행 | 06_Gearbox·07_Propeller 컴포넌트는 PR #35로 문서화, MQ-9 M0.30/M0.45 재실행 결과는 #38로 확인 | https://github.com/chestnutbread/Red-horse/issues/17 |
+| #18 | TIT 거버너 및 프로펠러·기어박스 반영 모델링 수정안 | 11_NgGovernor·12_TITLimiter·13_MinSelect가 PR #35로 문서화, README §4 항목1(min_select1 구조)로 구현 확인 | https://github.com/chestnutbread/Red-horse/issues/18 |
+| #6, #9, #11 | 컴포넌트 코드 아카이브(구버전, 1~2차) | Issue #31(2026-07-29 최종본) 및 PR #35로 대체됨. 제목에 [구버전] 접두 추가 후 close | https://github.com/chestnutbread/Red-horse/issues/6 , /9 , /11 |
+| #10 | TwinBuilder 터빈 등엔트로피 효율 저하 결과 공유(구버전) | Issue #24(엔진 시뮬레이션 결과값 공유)로 대체됨. [구버전] 접두 추가 후 close | https://github.com/chestnutbread/Red-horse/issues/10 |
+| #19 | APISAT Full Paper 제출 산출물 정리(2026-07-24 마감 기준, 구버전) | Issue #27, #28로 실제 진행 상황 대체됨. [구버전] 접두 추가 후 close | https://github.com/chestnutbread/Red-horse/issues/19 |
+| #37 | MQ-9 테이블 10건 RLS 미적용 | Supabase 보안 어드바이저로 ERROR 10건 확인 → `ENABLE ROW LEVEL SECURITY` 적용(기존 관례와 동일: 정책 없음, anon 차단) → 재조회로 ERROR 0건 확인 | https://github.com/chestnutbread/Red-horse/issues/37 |
+
+### 7-5. Open 유지 (2026-08-25, 별도 세션 추가분 — 부분해결)
+
+| 이슈 | 제목 | open 유지 사유 |
+|---|---|---|
+| #26 | 팀원 확인 필요사항 정리 | 5개 항목 중 K_τ(항목1)·RAMP_FUEL(항목3)은 부분해소, S1정의(항목2)·η_c/η_m 확정(항목5)은 여전히 팀 확인 대기 |
+| #38 | Issue #17 목표 마하수(M0.30)와 테이블명(M0.45) 불일치 | 기술적 사실관계는 규명 완료(두 테이블 모두 고도 0→25,000ft, 차이는 목표 마하수뿐, RAMP 테이블은 과도상태 확인됨). 남은 것은 팀 확인 2건(마하수 목표 변경 여부, README 4장 판정 재검토 여부)뿐 |
+
+### 7-6. 참고 — 진행 중인 PR / 미해결 코드 이슈
+
+| 항목 | 상태 |
+|---|---|
+| PR #35 (컴포넌트 8개 문서화, Issue #31 기준) | 미머지, junslee02 리뷰 대기 |
+| PR #39 (Nozzle 초킹 분기 추력식 수정안 문서화) | 미머지, junslee02 리뷰 대기. Issue #36 근거: `area*(p_cr-p_e)` → `area*(p_cr-p_back)`(표준 초킹 노즐 추력식 F=ṁ·V_e+A_e·(P_e−P_amb) 근거). git에 VHDL-AMS 원본(.vhd)이 없어 실제 Twin Builder 반영은 팀 작업 필요 |
+| Issue #21, #22 (압축기 오프디자인 특성맵 부재) | 미해결 유지 (근본 원인 미착수) |
